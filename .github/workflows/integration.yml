@@ -20,6 +20,9 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install -r requirements.txt
+      - run: pip install ansible-core==2.19.4
+      - run: ansible-playbook playbooks/preflight.yml --syntax-check
+      - run: ansible-playbook playbooks/preflight.yml
       - run: python -m compileall -q tests
       - run: pytest -q -rP --junitxml=results.xml
       - uses: actions/upload-artifact@v4
