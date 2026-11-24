@@ -1,12 +1,13 @@
 name: Sandbox integration
 on:
   workflow_dispatch:
-  push:
-    branches: [integration-testing]
+  pull_request:
+    branches: [main]
 permissions:
   contents: read
 jobs:
   live:
+    if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'integration-testing')
     runs-on: ubuntu-latest
     env:
       CC_HOST: https://sandboxdnac.cisco.com
