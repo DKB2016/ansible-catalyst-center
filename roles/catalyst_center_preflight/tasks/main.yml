@@ -1,0 +1,10 @@
+---
+- name: Validate required credentials and HTTPS endpoint
+  ansible.builtin.assert:
+    that:
+      - cc_username | length > 0
+      - cc_password | length > 0
+      - cc_host is match('^https://[^/]+/?$')
+      - cc_mode == 'read_only'
+      - cc_verify | bool or cc_host in ['https://sandboxdnac.cisco.com', 'https://sandboxdnac2.cisco.com']
+  no_log: true
