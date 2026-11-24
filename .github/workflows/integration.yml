@@ -1,0 +1,28 @@
+name: Sandbox integration
+on:
+  workflow_dispatch:
+  push:
+    branches: [integration-testing]
+permissions:
+  contents: read
+jobs:
+  live:
+    runs-on: ubuntu-latest
+    env:
+      CC_HOST: https://sandboxdnac.cisco.com
+      CC_VERIFY: "false"
+      CC_USERNAME: ${{ secrets.CC_USERNAME }}
+      CC_PASSWORD: ${{ secrets.CC_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - run: python -m compileall -q tests
+      - run: pytest -q --junitxml=results.xml
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: integration-results
+          path: results.xml
