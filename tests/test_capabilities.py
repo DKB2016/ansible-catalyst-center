@@ -27,4 +27,8 @@ def test_version_discovery(client):
     assert result.status_code == 200
     payload = result.json()
     assert payload
-    print("Release response:", payload)
+    import re
+    import json
+    versions = sorted(set(re.findall(r"\b\d+\.\d+\.\d+(?:\.\d+)?\b", json.dumps(payload))))
+    assert versions, "No release version found in response"
+    print("Release candidates:", ", ".join(versions))
