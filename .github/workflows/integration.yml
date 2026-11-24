@@ -14,6 +14,8 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install -r requirements.txt ansible-core==2.19.4
+      - run: pip install ansible-lint==25.9.2
+      - run: ansible-lint --profile basic playbooks/ roles/
       - run: ansible-inventory --graph
       - run: ansible-playbook playbooks/preflight.yml --syntax-check
       - run: ansible-playbook playbooks/site.yml --syntax-check
