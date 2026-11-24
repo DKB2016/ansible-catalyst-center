@@ -1,10 +1,21 @@
 ---
-- name: Validate required credentials and HTTPS endpoint
+- name: Validate controller settings
   ansible.builtin.assert:
     that:
-      - cc_username | length > 0
-      - cc_password | length > 0
-      - cc_host is match('^https://[^/]+/?$')
+      - cc_host is string
+      - cc_host is match('^https://[A-Za-z0-9.-]+(:[0-9]+)?$')
       - cc_mode == 'read_only'
-      - cc_verify | bool or cc_host in ['https://sandboxdnac.cisco.com', 'https://sandboxdnac2.cisco.com']
+      - cc_verify is boolean
+      - cc_verify or cc_host in ['https://sandboxdnac.cisco.com', 'https://sandboxdnac2.cisco.com']
+      - cc_environment in ['sandbox', 'lab', 'production']
+      - cc_desired_state is mapping
+      - cc_desired_state | length == 0
+    fail_msg: Invalid controller settings or unsupported desired state.
+- name: Validate required credentials
+  ansible.builtin.assert:
+    that:
+      - cc_username is string
+      - cc_password is string
+      - cc_username | trim | length > 0
+      - cc_password | trim | length > 0
   no_log: true
