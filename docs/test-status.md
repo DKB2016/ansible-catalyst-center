@@ -17,3 +17,7 @@ Always-On is read-only. Do not submit configuration mutations. Develop configura
 
 ## Next
 Extract exact release from documented API; pin compatible native collection and SDK; test native read modules. Branch protection remains outstanding.
+
+## 2026-11-24 Sprint 1 evidence
+- [Run 10](https://github.com/DKB2016/ansible-catalyst-center/actions/runs/45415478728): five live reads passed; installedVersion returned internal build 3.723.75300, not a verified public release.
+- [Run 12](https://github.com/DKB2016/ansible-catalyst-center/actions/runs/45420218546): preflight syntax and execution passed; five live tests passed, one skipped. Public release and native SDK compatibility remain open. No configuration mutations attempted.
