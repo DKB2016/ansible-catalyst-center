@@ -1,5 +1,7 @@
 ---
 cc_mode: read_only
+cc_environment: sandbox
+cc_desired_state: {}
 cc_verify: true
 cc_username: "{{ lookup('ansible.builtin.env', 'CC_USERNAME') }}"
 cc_password: "{{ lookup('ansible.builtin.env', 'CC_PASSWORD') }}"
