@@ -28,7 +28,7 @@ def test_version_discovery(client):
     payload = result.json()
     assert payload
     import re
-    import json
-    versions = sorted(set(re.findall(r"\b\d+\.\d+\.\d+(?:\.\d+)?\b", json.dumps(payload))))
-    assert versions, "No release version found in response"
-    print("Release candidates:", ", ".join(versions))
+    version = payload["response"]["installedVersion"]
+    assert isinstance(version, str)
+    assert re.fullmatch(r"\d+\.\d+\.\d+(?:\.\d+)?", version), "Unexpected installedVersion format"
+    print("Installed Catalyst Center version:", version)
