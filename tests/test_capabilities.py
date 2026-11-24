@@ -32,3 +32,23 @@ def test_version_discovery(client):
     assert isinstance(version, str)
     assert re.fullmatch(r"\d+\.\d+\.\d+(?:\.\d+)?", version), "Unexpected installedVersion format"
     print("Installed Catalyst Center version:", version)
+
+
+def test_installed_release_probe(client):
+    session, host = client
+    result = session.get(host + "/dna/system/api/v1/installedRelease", timeout=30, allow_redirects=False)
+    print("Installed release HTTP status:", result.status_code)
+    if result.status_code in (403, 404, 501):
+        pytest.skip("Installed release endpoint unavailable")
+    assert result.status_code == 200
+    import re
+    def inspect(value, path=""):
+        if isinstance(value, dict):
+            for key, item in value.items():
+                inspect(item, path + "." + key)
+        elif isinstance(value, list):
+            for item in value:
+                inspect(item, path + "[]")
+        elif isinstance(value, str) and re.fullmatch(r"\d+\.\d+\.\d+(?:\.\d+)?", value):
+            print("Version field:", path, value)
+    inspect(result.json())
