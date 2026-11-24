@@ -8,6 +8,14 @@ import pytest
 
 @pytest.mark.parametrize("overrides,valid", [
     ({}, True),
+    ({"cc_mode": "READ_ONLY"}, False),
+    ({"cc_mode": True}, False),
+    ({"cc_host": "http://sandboxdnac.cisco.com"}, False),
+    ({"cc_host": "https://sandboxdnac.cisco.com.evil.example"}, False),
+    ({"cc_host": "https://sandboxdnac.cisco.com/path"}, False),
+    ({"cc_host": "https://sandboxdnac.cisco.com:443"}, False),
+    ({"cc_environment": "production", "cc_mode": "write"}, False),
+    ({"cc_desired_state": None}, False),
     ({"cc_mode": "write"}, False),
     ({"cc_host": "https://sandboxdnac.cisco.com@evil.example"}, False),
     ({"cc_host": "https://other.example"}, False),
