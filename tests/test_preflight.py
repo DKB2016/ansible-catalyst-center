@@ -8,6 +8,9 @@ import pytest
 
 @pytest.mark.parametrize("overrides,valid", [
     ({}, True),
+    ({"cc_preflight_probe": "true"}, False),
+    ({"cc_preflight_probe": 1}, False),
+    ({"cc_preflight_probe": False}, True),
     ({"cc_mode": "READ_ONLY"}, False),
     ({"cc_mode": True}, False),
     ({"cc_host": "http://sandboxdnac.cisco.com"}, False),
