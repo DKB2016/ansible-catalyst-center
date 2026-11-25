@@ -23,6 +23,13 @@
   ansible.builtin.assert:
     that:
       - cc_preflight_probe | default(false) is boolean
+- name: Report local validation evidence
+  ansible.builtin.debug:
+    msg:
+      connectivity: not_requested
+      release_compatibility: unverified
+      tls_verification_enabled: "{{ cc_verify }}"
+  when: not (cc_preflight_probe | default(false))
 - name: Probe controller connectivity
   when: cc_preflight_probe | default(false)
   block:
@@ -65,6 +72,37 @@
         that:
           - cc_preflight_count.json.response is defined
           - cc_preflight_count.json.response is number
+      no_log: true
+    - name: Read controller release
+      ansible.builtin.uri:
+        url: "{{ cc_host }}/dna/intent/api/v1/dnac-release"
+        method: GET
+        headers:
+          X-Auth-Token: "{{ cc_preflight_auth.json.Token }}"
+        validate_certs: "{{ cc_verify }}"
+        follow_redirects: none
+        use_netrc: false
+        timeout: 30
+        status_code: 200
+      register: cc_preflight_release
+      no_log: true
+    - name: Validate release response
+      ansible.builtin.assert:
+        that:
+          - cc_preflight_release.json.response.installedVersion is string
+          - cc_preflight_release.json.response.installedVersion is match('^[0-9]+[.][0-9]+[.][0-9]+([.][0-9]+)?
+      ansible.builtin.debug:
+        msg:
+          connectivity: passed
+          authentication: passed
+          tls_verification_enabled: "{{ cc_verify }}"
+          installed_version: "{{ cc_preflight_release.json.response.installedVersion }}"
+          release_compatibility: unverified
+  rescue:
+    - name: Report controlled probe failure
+      ansible.builtin.fail:
+        msg: Controller preflight probe failed. Check connectivity, TLS, credentials and API permissions.
+)
       no_log: true
     - name: Report connectivity evidence
       ansible.builtin.debug:
