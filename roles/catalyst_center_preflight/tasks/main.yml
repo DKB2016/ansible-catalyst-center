@@ -19,3 +19,61 @@
       - cc_username | trim | length > 0
       - cc_password | trim | length > 0
   no_log: true
+- name: Validate probe selection
+  ansible.builtin.assert:
+    that:
+      - cc_preflight_probe | default(false) is boolean
+- name: Probe controller connectivity
+  when: cc_preflight_probe | default(false)
+  block:
+    - name: Obtain authentication token
+      ansible.builtin.uri:
+        url: "{{ cc_host }}/dna/system/api/v1/auth/token"
+        method: POST
+        url_username: "{{ cc_username }}"
+        url_password: "{{ cc_password }}"
+        force_basic_auth: true
+        validate_certs: "{{ cc_verify }}"
+        follow_redirects: none
+        use_netrc: false
+        timeout: 30
+        status_code: 200
+      register: cc_preflight_auth
+      no_log: true
+    - name: Validate authentication response
+      ansible.builtin.assert:
+        that:
+          - cc_preflight_auth.json.Token is defined
+          - cc_preflight_auth.json.Token is string
+          - cc_preflight_auth.json.Token | length > 0
+      no_log: true
+    - name: Read controller inventory count
+      ansible.builtin.uri:
+        url: "{{ cc_host }}/dna/intent/api/v1/network-device/count"
+        method: GET
+        headers:
+          X-Auth-Token: "{{ cc_preflight_auth.json.Token }}"
+        validate_certs: "{{ cc_verify }}"
+        follow_redirects: none
+        use_netrc: false
+        timeout: 30
+        status_code: 200
+      register: cc_preflight_count
+      no_log: true
+    - name: Validate inventory response
+      ansible.builtin.assert:
+        that:
+          - cc_preflight_count.json.response is defined
+          - cc_preflight_count.json.response is number
+      no_log: true
+    - name: Report connectivity evidence
+      ansible.builtin.debug:
+        msg:
+          connectivity: passed
+          authentication: passed
+          tls_verification_enabled: "{{ cc_verify }}"
+          release_compatibility: unverified
+  rescue:
+    - name: Report controlled probe failure
+      ansible.builtin.fail:
+        msg: Controller preflight probe failed. Check connectivity, TLS, credentials and API permissions.
