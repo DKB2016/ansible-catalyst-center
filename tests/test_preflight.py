@@ -8,6 +8,11 @@ import pytest
 
 @pytest.mark.parametrize("overrides,valid", [
     ({}, True),
+    ({"cc_expected_release": "2.3.7.9"}, True),
+    ({"cc_expected_release": "3.1.3"}, True),
+    ({"cc_expected_release": "latest"}, False),
+    ({"cc_expected_release": 2379}, False),
+    ({"cc_expected_release": ""}, False),
     ({"cc_preflight_probe": "true"}, False),
     ({"cc_preflight_probe": 1}, False),
     ({"cc_preflight_probe": False}, True),
