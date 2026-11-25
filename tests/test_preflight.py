@@ -41,3 +41,7 @@ def test_preflight(overrides, valid):
     if valid:
         assert "failed=0" in output
         assert "changed=0" in output
+        assert "not_requested" in output
+        assert "unverified" in output
+    else:
+        assert "Report local validation evidence" not in output
