@@ -50,3 +50,21 @@ def test_preflight(overrides, valid):
         assert "unverified" in output
     else:
         assert "Report local validation evidence" not in output
+
+
+def test_probe_structure():
+    from pathlib import Path
+
+    import yaml
+
+    tasks = yaml.safe_load(Path("roles/catalyst_center_preflight/tasks/main.yml").read_text())
+    names = [task["name"] for task in tasks]
+    assert len(names) == len(set(names))
+    probe = next(task for task in tasks if task["name"] == "Probe controller connectivity")
+    requests = [task for task in probe["block"] if "ansible.builtin.uri" in task]
+    assert [task["ansible.builtin.uri"]["method"] for task in requests] == ["POST", "GET", "GET"]
+    assert requests[0]["ansible.builtin.uri"]["url"].endswith("/auth/token")
+    for task in requests:
+        assert task["no_log"] is True
+        assert task["ansible.builtin.uri"]["follow_redirects"] == "none"
+    assert len(probe["rescue"]) == 1
