@@ -68,3 +68,26 @@ def test_probe_structure():
         assert task["no_log"] is True
         assert task["ansible.builtin.uri"]["follow_redirects"] == "none"
     assert len(probe["rescue"]) == 1
+
+
+@pytest.mark.parametrize("overrides,valid", [
+    ({}, True),
+    ({"cc_mode": "write"}, False),
+    ({"cc_desired_state": {"sites": []}}, False),
+])
+def test_master_read_only(overrides, valid):
+    env = dict(os.environ, CC_USERNAME="dummy-user", CC_PASSWORD="dummy-secret")
+    result = subprocess.run(
+        ["ansible-playbook", "playbooks/site.yml", "-e", json.dumps(overrides)],
+        env=env, capture_output=True, text=True, timeout=60,
+    )
+    output = result.stdout + result.stderr
+    assert "dummy-secret" not in output
+    assert (result.returncode == 0) == valid, output
+    assert "Obtain authentication token" not in output or "skipping:" in output
+    if valid:
+        assert "not_requested" in output
+        assert "changed=0" in output
+        assert "failed=0" in output
+    else:
+        assert "Report local validation evidence" not in output
