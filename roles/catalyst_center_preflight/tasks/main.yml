@@ -53,7 +53,7 @@
         that:
           - cc_preflight_auth.json.Token is defined
           - cc_preflight_auth.json.Token is string
-          - cc_preflight_auth.json.Token | length > 0
+          - cc_preflight_auth.json.Token | trim | length > 0
       no_log: true
     - name: Read controller inventory count
       ansible.builtin.uri:
@@ -72,7 +72,8 @@
       ansible.builtin.assert:
         that:
           - cc_preflight_count.json.response is defined
-          - cc_preflight_count.json.response is number
+          - cc_preflight_count.json.response is integer
+          - cc_preflight_count.json.response >= 0
       no_log: true
     - name: Read controller release
       ansible.builtin.uri:
