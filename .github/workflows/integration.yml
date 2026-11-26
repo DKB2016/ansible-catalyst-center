@@ -1,0 +1,59 @@
+name: Sandbox integration
+on:
+  workflow_dispatch:
+  push:
+    branches: [integration-testing]
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  local:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt ansible-core==2.19.4
+      - run: pip install ansible-lint==25.9.2
+      - run: ansible-lint --profile basic playbooks/ roles/
+      - run: ansible-inventory --graph
+      - run: ansible-playbook playbooks/preflight.yml --syntax-check
+      - run: ansible-playbook playbooks/site.yml --syntax-check
+      - run: pytest -q tests/test_preflight.py tests/test_mocked_api.py --junitxml=local-results.xml
+      - name: Prepare baseline offline wheelhouse
+        run: |
+          mkdir -p offline/wheels
+          python -m pip download --only-binary=:all: --dest offline/wheels -r requirements.txt ansible-core==2.19.4 ansible-lint==25.9.2
+          (cd offline && find wheels -type f -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS)
+      - name: Verify offline baseline installation
+        run: bash scripts/verify-offline.sh offline
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: local-results
+          path: local-results.xml
+  live:
+    needs: local
+    if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'integration-testing')
+    runs-on: ubuntu-latest
+    env:
+      CC_HOST: https://sandboxdnac.cisco.com
+      CC_VERIFY: "false"
+      CC_USERNAME: ${{ secrets.CC_USERNAME }}
+      CC_PASSWORD: ${{ secrets.CC_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt ansible-core==2.19.4
+      - run: ansible-playbook playbooks/preflight.yml -e '{"cc_preflight_probe": true}'
+      - run: python -m compileall -q tests
+      - run: pytest -q -rP --ignore=tests/test_preflight.py --ignore=tests/test_mocked_api.py --junitxml=results.xml
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: integration-results
+          path: results.xml

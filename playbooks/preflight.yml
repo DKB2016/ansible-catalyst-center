@@ -1,0 +1,6 @@
+---
+- name: Validate controller inputs
+  hosts: catalyst_center
+  gather_facts: false
+  roles:
+    - catalyst_center_preflight

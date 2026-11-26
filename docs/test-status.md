@@ -1,0 +1,31 @@
+# Verification ledger
+
+## Verified baseline
+GitHub Actions run 45404017981, job 138479786954: 5 passed, 5 warnings in 1.07s.
+Authentication/token, site retrieval, device inventory, device count and release endpoint response passed. Exact release value not yet validated. TLS warning expected for sandbox only.
+
+## Release policy
+Always-On is read-only. Do not submit configuration mutations. Develop configuration roles using documented Cisco modules first, test schemas and mocked behavior, and keep live write validation deferred. Do not label mocked results as live passes. No production deployment or merge of unverified writable functionality.
+
+## Deferred on-demand lab backlog
+- Create/read/update/delete and cleanup for each writable resource.
+- Repeat deployment and independently verify idempotency.
+- Drift remediation, failure recovery and rollback.
+- Administrative settings, PKI, AAA, backups, licensing and full greenfield deployment.
+- Device provisioning, SWIM, PnP, wireless and SDA changes.
+- Verify exact release, native collection and SDK compatibility before write tests.
+
+## Next
+Extract exact release from documented API; pin compatible native collection and SDK; test native read modules. Branch protection remains outstanding.
+
+## 2026-11-24 Sprint 1 evidence
+- [Run 10](https://github.com/DKB2016/ansible-catalyst-center/actions/runs/45415478728): five live reads passed; installedVersion returned internal build 3.723.75300, not a verified public release.
+- [Run 12](https://github.com/DKB2016/ansible-catalyst-center/actions/runs/45420218546): preflight syntax and execution passed; five live tests passed, one skipped. Public release and native SDK compatibility remain open. No configuration mutations attempted.
+
+- [Run 16](https://github.com/DKB2016/ansible-catalyst-center/actions/runs/45469809794), dc9b49f: local and live jobs successful; inventory graph, both syntax checks, ten local preflight cases and isolated execution passed. Issues #5, #6 and #15 accepted (9 points). Expanded bypass tests pending CI. #8 remains open for connectivity and compatibility.
+
+- [Run 17](https://github.com/DKB2016/ansible-catalyst-center/actions/runs/45485179946), 491fe95: local job 138768537520, 18 passed; live job 138768780682, preflight changed=0, failed=0, five passed and one skipped. Accepted #7 (3 points), #11 (5 points), #12 (5 points) for initial read-only scope. Total accepted 22/57 points, six of nine prioritized issues. Pinned ansible-lint gate and named FQCN import added in de4cd38 and 6d7e5ed; CI verification pending. #8, #13 and #14 remain open.
+
+- [Run 19](https://github.com/DKB2016/ansible-catalyst-center/actions/runs/45495159176), 62c307a: local job 138803567879 passed pinned lint, zero failures/warnings, production profile achieved, both syntax checks and 18 local tests. Live job succeeded. #13 accepted (3 points); total 25/57, seven of nine prioritized issues. #14 mocked API tests added and wired into local CI; acceptance pending new run. #8 remains open.
+
+- Accepted against [CI run 22](https://github.com/DKB2016/ansible-catalyst-center/actions/runs/45507468145), commit d2357e74eccb1582402696ac1decbe8e0354901c: local job 138846270042 passed 26 tests (18 preflight + 8 mocked API), including authentication/read success and failure and unknown-host rejection. Live job 138846562795 passed five read tests, one skipped; inspected PR diff confirms authentication POST only and GET probes, no configuration writes. #14 accepted (5 points); 30/57 accepted, eight of nine prioritized issues. #8 remains open.
