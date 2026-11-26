@@ -141,3 +141,34 @@ def test_release_expectation_contract(release, expected, valid):
     env = Environment(undefined=StrictUndefined)
     context = {"cc_expected_release": expected, "cc_preflight_release": {"json": {"response": {"installedVersion": release}}}}
     assert all(env.compile_expression(expr)(**context) for expr in task["ansible.builtin.assert"]["that"]) == valid
+
+
+@pytest.mark.parametrize("expected,release", [
+    ("2.3.7.9", "2.3.7.9"),
+    ("3.1.3.0", "3.1.3.0"),
+])
+def test_native_compatibility_gate_fails_closed(expected, release):
+    from pathlib import Path
+    import yaml
+
+    tasks = yaml.safe_load(Path("roles/catalyst_center_preflight/tasks/main.yml").read_text())
+    probe = next(task for task in tasks if task["name"] == "Probe controller connectivity")
+    # Execute the actual gate with a matched release but no verified native stack.
+    gate = next(task for task in probe["block"] if task["name"] == "Reject unverified native compatibility when required")
+    import tempfile
+    with tempfile.TemporaryDirectory() as directory:
+        play = Path(directory) / "gate.yml"
+        play.write_text(yaml.safe_dump([{
+            "name": "Exercise native compatibility gate",
+            "hosts": "localhost",
+            "gather_facts": False,
+            "vars": {"cc_require_compatibility": True, "cc_expected_release": expected,
+                     "cc_preflight_release": {"json": {"response": {"installedVersion": release}}}},
+            "tasks": [gate],
+        }]))
+        result = subprocess.run(
+            ["ansible-playbook", "-i", "localhost,", "-c", "local", str(play)],
+            capture_output=True, text=True, timeout=60,
+        )
+        assert result.returncode != 0
+        assert "Native collection and SDK compatibility has not been verified" in result.stdout
