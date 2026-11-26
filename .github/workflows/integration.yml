@@ -1,6 +1,8 @@
 name: Sandbox integration
 on:
   workflow_dispatch:
+  push:
+    branches: [integration-testing]
   pull_request:
     branches: [main]
 permissions:
