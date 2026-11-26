@@ -109,3 +109,35 @@ def test_inventory_count_contract(count, valid):
     env = Environment(undefined=StrictUndefined)
     context = {"cc_preflight_count": {"json": {"response": count}}}
     assert all(env.compile_expression(expr)(**context) for expr in task["ansible.builtin.assert"]["that"]) == valid
+
+
+@pytest.mark.parametrize("token,valid", [("token", True), (" ", False), ("", False), (None, False), (123, False)])
+def test_auth_token_contract(token, valid):
+    from pathlib import Path
+    from jinja2 import Environment, StrictUndefined
+    import yaml
+
+    tasks = yaml.safe_load(Path("roles/catalyst_center_preflight/tasks/main.yml").read_text())
+    probe = next(task for task in tasks if task["name"] == "Probe controller connectivity")
+    task = next(task for task in probe["block"] if task["name"] == "Validate authentication response")
+    env = Environment(undefined=StrictUndefined)
+    context = {"cc_preflight_auth": {"json": {"Token": token}}}
+    assert all(env.compile_expression(expr)(**context) for expr in task["ansible.builtin.assert"]["that"]) == valid
+
+
+@pytest.mark.parametrize("release,expected,valid", [
+    ("2.3.7.9", "2.3.7.9", True),
+    ("3.723.75300", "2.3.7.9", False),
+    ("2.3.7.6", "2.3.7.9", False),
+])
+def test_release_expectation_contract(release, expected, valid):
+    from pathlib import Path
+    from jinja2 import Environment, StrictUndefined
+    import yaml
+
+    tasks = yaml.safe_load(Path("roles/catalyst_center_preflight/tasks/main.yml").read_text())
+    probe = next(task for task in tasks if task["name"] == "Probe controller connectivity")
+    task = next(task for task in probe["block"] if task["name"] == "Validate release against explicit deployment expectation")
+    env = Environment(undefined=StrictUndefined)
+    context = {"cc_expected_release": expected, "cc_preflight_release": {"json": {"response": {"installedVersion": release}}}}
+    assert all(env.compile_expression(expr)(**context) for expr in task["ansible.builtin.assert"]["that"]) == valid
