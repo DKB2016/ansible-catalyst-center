@@ -23,6 +23,9 @@
   ansible.builtin.assert:
     that:
       - cc_preflight_probe | default(false) is boolean
+      - cc_require_compatibility | default(false) is boolean
+      - not (cc_require_compatibility | default(false)) or (cc_preflight_probe | default(false))
+      - not (cc_require_compatibility | default(false)) or cc_expected_release is defined
       - cc_expected_release is not defined or (cc_expected_release is string and cc_expected_release is match('^[0-9]+[.][0-9]+[.][0-9]+([.][0-9]+)?$'))
 - name: Report local validation evidence
   ansible.builtin.debug:
@@ -99,6 +102,11 @@
         that:
           - cc_expected_release is not defined or cc_expected_release == cc_preflight_release.json.response.installedVersion
         fail_msg: Installed controller release differs from the deployment expectation.
+    - name: Reject unverified native compatibility when required
+      ansible.builtin.assert:
+        that:
+          - not (cc_require_compatibility | default(false))
+        fail_msg: Native collection and SDK compatibility has not been verified for this release.
     - name: Report connectivity evidence
       ansible.builtin.debug:
         msg:
