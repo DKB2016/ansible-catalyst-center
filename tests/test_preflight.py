@@ -91,3 +91,17 @@ def test_master_read_only(overrides, valid):
         assert "failed=0" in output
     else:
         assert "Report local validation evidence" not in output
+
+
+@pytest.mark.parametrize("count,valid", [(0, True), (12, True), (-1, False), (1.5, False), (True, False), ("12", False), (None, False)])
+def test_inventory_count_contract(count, valid):
+    from pathlib import Path
+    from jinja2 import Environment, StrictUndefined
+    import yaml
+
+    tasks = yaml.safe_load(Path("roles/catalyst_center_preflight/tasks/main.yml").read_text())
+    probe = next(task for task in tasks if task["name"] == "Probe controller connectivity")
+    task = next(task for task in probe["block"] if task["name"] == "Validate inventory response")
+    env = Environment(undefined=StrictUndefined)
+    context = {"cc_preflight_count": {"json": {"response": count}}}
+    assert all(env.compile_expression(expr)(**context) for expr in task["ansible.builtin.assert"]["that"]) == valid
